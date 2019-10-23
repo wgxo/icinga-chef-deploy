@@ -22,13 +22,13 @@ The whole system has been prepared and packaged as a Chef Cookbook with a single
 
 To deploy it, install the chefdk package in the deployment server:
 
-`wget -c https://packages.chef.io/files/stable/chefdk/2.3.4/ubuntu/16.04/chefdk\_2.3.4-1\_amd64.deb`
-`dpkg –i chefdk\_2.3.4-1\_amd64.deb`
+_wget -c https://packages.chef.io/files/stable/chefdk/2.3.4/ubuntu/16.04/chefdk\_2.3.4-1\_amd64.deb_
+_dpkg –i chefdk\_2.3.4-1\_amd64.deb_
 
 Install the chef-client package in each node where Icinga is going to be deployed:
 
-`wget –c https://packages.chef.io/files/stable/chef/13.6.0/ubuntu/16.04/chef\_13.6.0-1\_amd64.deb`
-`dpkg -i chef\_13.6.0-1\_amd64.deb`
+_wget –c https://packages.chef.io/files/stable/chef/13.6.0/ubuntu/16.04/chef\_13.6.0-1\_amd64.deb_
+_dpkg -i chef\_13.6.0-1\_amd64.deb_
 
 ### Prerequisites:
 
@@ -38,8 +38,8 @@ The chef-client command needs to be able to connect using SSH and public key aut
 
 On the chef server, execute the following commands:
 
-`mkdir -p /opt/deploy/chef-repo/cookbooks`
-`knife configure –y --defaults -r /opt/deploy/chef-repo -s http://IP\_OF\_CHEF\_SERVER/`
+_mkdir -p /opt/deploy/chef-repo/cookbooks_
+_knife configure –y --defaults -r /opt/deploy/chef-repo -s http://IP\_OF\_CHEF\_SERVER/_
 
 Copy the icinga-dist folder to */opt/deploy/chef-repo/cookbooks* on the chef server and start it using:
 
@@ -47,8 +47,8 @@ Copy the icinga-dist folder to */opt/deploy/chef-repo/cookbooks* on the chef ser
 
 On each node where Icinga will be deployed, execute
 
-`knife configure client -s http://chef-server /etc/chef`
-`chef-client --runlist icinga-dist`
+_knife configure client -s http://chef-server /etc/chef_
+_chef-client --runlist icinga-dist_
 
 From this point on. The process is automatic.
 
