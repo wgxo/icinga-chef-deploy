@@ -1,0 +1,4 @@
+# Run MySQL backups every 4 hours
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+0 */4 * * * root /usr/sbin/logrotate -f /etc/logrotate-mybackup.conf | /usr/bin/logger -t my-backup
