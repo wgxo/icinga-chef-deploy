@@ -23,11 +23,13 @@ The whole system has been prepared and packaged as a Chef Cookbook with a single
 To deploy it, install the chefdk package in the deployment server:
 
 _wget -c https://packages.chef.io/files/stable/chefdk/2.3.4/ubuntu/16.04/chefdk\_2.3.4-1\_amd64.deb_
+
 _dpkg –i chefdk\_2.3.4-1\_amd64.deb_
 
 Install the chef-client package in each node where Icinga is going to be deployed:
 
 _wget –c https://packages.chef.io/files/stable/chef/13.6.0/ubuntu/16.04/chef\_13.6.0-1\_amd64.deb_
+
 _dpkg -i chef\_13.6.0-1\_amd64.deb_
 
 ### Prerequisites:
@@ -39,6 +41,7 @@ The chef-client command needs to be able to connect using SSH and public key aut
 On the chef server, execute the following commands:
 
 _mkdir -p /opt/deploy/chef-repo/cookbooks_
+
 _knife configure –y --defaults -r /opt/deploy/chef-repo -s http://IP\_OF\_CHEF\_SERVER/_
 
 Copy the icinga-dist folder to */opt/deploy/chef-repo/cookbooks* on the chef server and start it using:
@@ -48,6 +51,7 @@ Copy the icinga-dist folder to */opt/deploy/chef-repo/cookbooks* on the chef ser
 On each node where Icinga will be deployed, execute
 
 _knife configure client -s http://chef-server /etc/chef_
+
 _chef-client --runlist icinga-dist_
 
 From this point on. The process is automatic.
@@ -77,36 +81,67 @@ Contains configuration files for Icinga modules
 Templates:
 
 _/opt/deploy/apache/build.sh_
+
 _/opt/deploy/apache/Dockerfile_
+
 _/opt/deploy/apache/reload.sh_
+
 _/opt/deploy/apache/startup.sh_
+
 _/opt/deploy/apache/conf/authentication.ini_
+
 _/opt/deploy/apache/conf/config.ini_
+
 _/opt/deploy/apache/conf/resources.ini_
+
 _/opt/deploy/apache/conf/roles.ini_
+
 _/opt/deploy/apache/conf/modules/monitoring/backends.ini_
+
 _/opt/deploy/apache/conf/modules/monitoring/commandtransports.ini_
+
 _/opt/deploy/apache/conf/modules/monitoring/config.ini_
+
 _/opt/deploy/mysql/build.sh_
+
 _/opt/deploy/mysql/Dockerfile_
+
 _/opt/deploy/mysql/icinga2.sql_
+
 _/opt/deploy/mysql/icingaweb2.sql_
+
 _/opt/deploy/mysql/mysqld\_safe\_syslog.cnf_
+
 _/opt/deploy/mysql/reload.sh_
+
 _/opt/deploy/mysql/startup.sh_
+
 _/opt/deploy/scripts/19daily_
+
 _/opt/deploy/scripts/apache-backup.sh_
+
 _/opt/deploy/scripts/apache-reload.sh_
+
 _/opt/deploy/scripts/logrotate-s3backup.conf_
+
 _/opt/deploy/scripts/mysql-backup.sh_
+
 _/opt/deploy/scripts/mysql-reload.sh_
+
 _/opt/deploy/scripts/s3cmd.conf_
+
 _/opt/deploy/scripts/start-apache.sh_
+
 _/opt/deploy/scripts/start-mysql.sh_
+
 _/opt/deploy/scripts/stop-apache.sh_
+
 _/opt/deploy/scripts/stop-mysql.sh_
+
 _/opt/deploy/icinga-script.sh_
+
 _/opt/deploy/post-install.sh_
+
 
 Installation Script:
 
