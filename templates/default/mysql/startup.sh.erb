@@ -1,0 +1,34 @@
+#!/bin/sh
+
+mkdir -p /var/run/mysqld
+chown -R mysql:mysql /var/log/mysql /var/lib/mysql /var/run/mysqld
+
+if [ ! -f /var/lib/mysql/ibdata1 ]; then
+
+    /usr/sbin/mysqld --initialize-insecure
+
+    /usr/bin/mysqld_safe --skip-name-resolve --explicit_defaults_for_timestamp --disable-partition-engine-check &
+    sleep 10s
+
+    cat <<EOF | mysql
+GRANT ALL ON *.* TO admin@'%' IDENTIFIED BY 'admin' WITH GRANT OPTION; 
+
+CREATE DATABASE icinga;
+GRANT ALL ON icinga.* TO icinga@'%' IDENTIFIED BY 'icinga' WITH GRANT OPTION; 
+USE icinga;
+SOURCE /opt/icinga2.sql;
+
+CREATE DATABASE icingaweb2;
+GRANT ALL ON icingaweb2.* TO icingaweb2@'%' IDENTIFIED BY 'icingaweb2' WITH GRANT OPTION; 
+USE icingaweb2;
+SOURCE /opt/icingaweb2.sql;
+INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '\$1\$rzMI/0b3\$uzXPkMXnuudeDky8zTpoC.');
+
+FLUSH PRIVILEGES
+EOF
+
+    kill `pidof mysqld`
+    sleep 10s
+fi
+
+/usr/bin/mysqld_safe --skip-name-resolve --explicit_defaults_for_timestamp --disable-partition-engine-check

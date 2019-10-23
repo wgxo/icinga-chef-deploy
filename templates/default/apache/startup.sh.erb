@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ -z "`grep icingadb /etc/hosts`" ]; then
+cat <<EOF >> /etc/hosts
+$GWIP icingahost
+$DBIP icingadb
+EOF
+fi
+
+# Setup keys dir
+[ -d /opt/www ] || mkdir /opt/www 
+chown www-data:www-data /opt/www
+
+# Generating SSH keys
+[ -f /opt/www/identity ] || su - www-data -c "ssh-keygen -q -f /opt/www/identity -N ''"
+
+/usr/sbin/apache2 -D FOREGROUND

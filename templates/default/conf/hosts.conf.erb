@@ -1,0 +1,16 @@
+object Host "icingaweb" {
+  import "generic-linux"
+  address = "icingaweb"
+  vars.http_vhosts["http"] = {
+    http_vhost = "icingaweb"
+    http_uri = "/"
+  }
+}
+
+object Host "icingadb" {
+  import "generic-mysql"
+  address = "icingadb"
+  vars.mysql_database = "icinga"
+  vars.mysql_username = "icinga"
+  vars.mysql_password = "icinga"
+}

@@ -1,0 +1,98 @@
+#!/bin/bash
+
+function header {
+    CH='-'
+    if [ ! -z "$2" ]; then CH="$2"; fi
+    echo -e "\e[92m"
+    head -c `tput cols` /dev/zero | tr '\0' $CH
+    echo -e "\e[96m\n$1\e[92m"
+    head -c `tput cols` /dev/zero | tr '\0' $CH
+    echo -e "\e[0m"
+}
+
+function install_docker() {
+	if [ -z "`which docker 2>/dev/null`" ]; then
+    header "Install Docker"
+    apt install -yq docker.io
+    systemctl enable docker
+    systemctl start docker
+  fi
+}
+
+function install_icinga() {
+  if [ 1 -eq `dpkg-query -l icinga2 >/dev/null 2>&1 ; echo $?` ]; then
+	    header "Install Icinga"
+	    apt install -yq icinga2 icinga2-ido-mysql
+	    systemctl enable icinga2
+	fi
+
+	if [ -z "`id icingacmd 2>/dev/null`" ]; then
+	    header "Adding icingacmd remote user and group"
+	    groupadd icingacmd
+	    useradd icingacmd -g icingacmd -m -c "Icinga Remote"
+	fi
+
+	header "Fixing mysql host on ido-mysql.conf"
+	cat <<EOF > /etc/icinga2/features-available/ido-mysql.conf
+library "db_ido_mysql"
+
+object IdoMysqlConnection "ido-mysql" {
+  user     = "icinga",
+  password = "icinga",
+  host     = "127.0.0.1",
+  database = "icinga"
+}
+EOF
+
+	header "Enabling IDO MySQL feature"
+	icinga2 feature enable ido-mysql
+
+	header "Setting Up External Command Pipe"
+	icinga2 feature enable command
+	
+	if [ 1 -eq `dpkg-query -l monitoring-plugins-standard >/dev/null 2>&1 ; echo $?` ]; then
+    header "Installing nagios plugins"
+    apt install -yq monitoring-plugins-standard
+	fi
+}
+
+function setup_mysql() {
+	# mysql-client is already installed by icinga2-ido-mysql
+	
+	if [ -z "`id mysql 2>/dev/null`" ]; then
+	    header "Adding MySQL user and group"
+	    groupadd mysql
+	    useradd -g mysql -d /nonexistent -s /sbin/nologin -c "MySQL User" mysql
+	fi
+}
+
+function configure_monitor() {
+	header "Setting up MySQL monitoring"
+	chmod 755 /etc/icinga2/conf.d
+	
+	# Uncomment NodeName to allow icinga to start
+  perl -pi -e 's/\/\/const NodeName/const NodeName/' /etc/icinga2/constants.conf
+}
+
+# Disable installer prompts
+export DEBIAN_FRONTEND=noninteractive
+
+header "Updating packages"
+apt update -yq
+
+install_docker
+
+install_icinga
+
+setup_mysql
+
+configure_monitor
+
+header "Starting icinga"
+systemctl start icinga2
+
+header "Installation complete"
+header "NEXT STEPS: \n \
+  1. Go to the mysql folder and run: bash build.sh  \n \
+  2. Go to the apache folder and run: bash build.sh  \n \
+  3. Run: bash post-install.sh from this directory" '='

@@ -1,0 +1,12 @@
+template Host "generic-linux" {
+  import "generic-host"
+  vars.http_vhosts["http"] = {
+    http_uri = "/"
+  }
+}
+
+template Host "generic-mysql" {
+  import "generic-host"
+  vars.mysql = true
+  check_command = "mysql"
+}

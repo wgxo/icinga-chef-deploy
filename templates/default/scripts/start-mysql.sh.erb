@@ -1,0 +1,9 @@
+#!/bin/bash
+
+/usr/bin/docker stop icingadb >/dev/null 2>&1
+/usr/bin/docker rm icingadb >/dev/null 2>&1
+
+/usr/bin/docker run \
+				--name=icingadb -d -p 3306:3306 \
+				-v /var/lib/mysql:/var/lib/mysql \
+				-v /var/log/mysql:/var/log/mysql mysql

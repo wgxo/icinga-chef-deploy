@@ -1,0 +1,43 @@
+#!/bin/bash
+
+function header {
+    CH='-'
+    if [ ! -z "$2" ]; then CH="$2"; fi
+    echo -e "\e[92m"
+    head -c `tput cols` /dev/zero | tr '\0' $CH
+    echo -e "\e[96m\n$1\e[92m"
+    head -c `tput cols` /dev/zero | tr '\0' $CH
+    echo -e "\e[0m"
+}
+
+if [ 1 -eq `dpkg-query -l s3cmd >/dev/null 2>&1 ; echo $?` ]; then
+    header "Install s3cmd"
+    apt install -yq s3cmd
+fi
+
+header "Setting up scripts"
+mkdir -pv /opt/deploy
+cp -v scripts/*.sh /opt/deploy/
+
+header "Enabling startup scripts"
+cat <<EOF > /etc/rc.local
+#!/bin/bash
+touch /var/lock/subsys/local
+/bin/bash /opt/deploy/start-mysql.sh
+/bin/bash /opt/deploy/start-apache.sh
+EOF
+chmod +x /etc/rc.local
+
+header "Installing cron job for S3 backups"
+cp -v scripts/19daily /etc/cron.d/
+cp -v scripts/*.conf /etc/
+
+header "Copying configuration files"
+[ -f '~/.my.cnf' ] || cp -v conf/my.cnf ~/.my.cnf
+cp -pvf conf/*.conf /etc/icinga2/conf.d/
+
+header "Starting services"
+/bin/bash /opt/deploy/start-mysql.sh
+/bin/bash /opt/deploy/start-apache.sh
+
+header "Post-Installation complete" '='

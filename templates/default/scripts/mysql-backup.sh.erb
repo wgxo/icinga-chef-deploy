@@ -1,0 +1,86 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "Use: $0 DATE FILE [FILE ...]"
+    exit 1
+fi
+
+BUCKET="wglogs-bucket"
+DATE="$1"
+
+shift
+
+### BEGIN LOGS BACKUP ###
+
+# compress files before uploading them
+gzip `for f in $*; do echo $f-${DATE}; done`
+
+if [ $? != 0 ]; then
+  echo "gzip exited abnormally. Backup stopped"
+  exit 1
+fi
+
+for FILE in $*; do
+    DIR=`basename ${FILE} | sed 's/\./_/g'`
+    # Send logs to S3
+    /usr/bin/s3cmd -c /etc/s3cmd.conf --no-progress \
+			  put ${FILE}-${DATE}.gz s3://${BUCKET}/mysql/${DIR}/ 2>&1 
+done
+
+# decompress files before deleting them
+gunzip `for f in $*; do echo $f-${DATE}.gz; done`
+
+### END LOGS BACKUP ###
+
+### BEGIN DATABASE BACKUP ###
+
+FILE="/var/log/mysql/backup-${DATE}.sql.gz"
+BINLOGS=`echo show binary logs | mysql | tail -n +2| awk '{print "/var/log/mysql/" $1}'`
+
+# Execute backup and compress it before uploading 
+echo "MySQL backup started"
+/usr/bin/mysqldump --single-transaction \
+									 --flush-logs \
+									 --master-data=2 \
+                   --all-databases | gzip - > ${FILE}
+
+# Send logs to S3
+/usr/bin/s3cmd -c /etc/s3cmd.conf --no-progress \
+	       put ${FILE} s3://${BUCKET}/mysql/backups/ 2>&1 
+
+if [ $? != 0 ]; then
+  echo "s3cmd exited abnormally"
+else
+  # Create archive of bin logs
+  BACKUP="/var/log/mysql/bin-logs-${DATE}.txz"
+  echo "Archiving bin logs..."
+  tar cvJf ${BACKUP} ${BINLOGS}
+
+  # Send bin logs to S3
+  /usr/bin/s3cmd -c /etc/s3cmd.conf --no-progress \
+	       put ${BACKUP} s3://${BUCKET}/mysql/bin_log/ 2>&1 
+  
+  if [ $? != 0 ]; then
+    echo "s3cmd exited abnormally"
+  else
+    echo "Cleaning up..."
+    # Delete bin logs
+    for f in ${BINLOGS}; do unlink $f; done
+ 
+    # Delete archive
+    unlink ${BACKUP}
+
+    # Purge bin logs in MySQL
+    LASTBINLOG=`echo show binary logs | mysql | tail -1 | awk '{print $1}'`
+    echo "purge binary logs to '${LASTBINLOG}'" | mysql
+
+    echo "Backup complete."
+  fi
+fi
+
+# Delete compressed backup
+unlink ${FILE}
+
+### END DATABASE BACKUP ###
+
+exit 0

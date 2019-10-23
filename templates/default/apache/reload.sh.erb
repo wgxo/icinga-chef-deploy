@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo Reloading Apache...
+touch /var/log/apache2/icingaweb2.log
+chown www-data:www-data /var/log/apache2/icingaweb2.log
+kill -HUP `pidof apache2`
+tail -n 2 /var/log/apache2/error.log
+echo Done.

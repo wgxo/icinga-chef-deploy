@@ -1,0 +1,32 @@
+#!/bin/bash
+
+/usr/bin/docker stop icingaweb >/dev/null 2>&1
+/usr/bin/docker rm icingaweb >/dev/null 2>&1
+
+if [ -z "`/usr/bin/docker ps -q -f name=icingadb`" ]; then
+  echo "The MySQL container is not running"
+  exit 1 
+fi
+
+GWIP=`docker inspect -f '{{ .NetworkSettings.Gateway }}' icingadb`
+DBIP=`docker inspect -f '{{ .NetworkSettings.IPAddress }}' icingadb`
+
+[ -d /var/log/apache2 ] || mkdir /var/log/apache2
+[ -d /var/www ] || mkdir /var/www
+
+/usr/bin/docker run \
+			--name=icingaweb -d -p 80:80 \
+			-v /var/log/apache2:/var/log/apache2 \
+			-v /opt/www:/opt/www \
+			-e GWIP=$GWIP -e DBIP=$DBIP apache
+
+sleep 5
+
+su - icingacmd -c 'mkdir -p ~/.ssh ; cp /opt/www/identity.pub ~/.ssh/authorized_keys ; chmod -R 700 ~/.ssh'
+
+systemctl restart icinga2
+
+WEBIP=`docker inspect -f '{{ .NetworkSettings.IPAddress }}' icingaweb`
+
+grep -q icingadb /etc/hosts || echo $DBIP icingadb >> /etc/hosts
+grep -q icingaweb /etc/hosts || echo $WEBIP icingaweb >> /etc/hosts

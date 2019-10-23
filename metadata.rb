@@ -1,0 +1,7 @@
+name 'icinga-dist'
+maintainer 'The Authors'
+maintainer_email 'you@example.com'
+license 'all_rights'
+description 'Installs/Configures icinga-dist'
+long_description 'Installs/Configures icinga-dist'
+version '0.1.0'

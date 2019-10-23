@@ -1,0 +1,52 @@
+FROM ubuntu:17.10
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Update repositories
+RUN apt update -yq
+RUN apt install -yq wget
+
+# Install dependencies
+RUN apt install -yq apache2 php7.1-ldap php7.1 libapache2-mod-php7.1 php7.1-mcrypt php7.1-mysql php7.1-intl php7.1-gd php-imagick php7.1-pgsql ssh curl php7.1-curl icingaweb2
+
+# Fix Date.TimeZone in php.ini
+RUN echo 'date.timezone = "US/Central"' > /etc/php/7.1/apache2/conf.d/icinga.ini
+RUN echo 'error_log = "/var/log/apache2/error.log"' >> /etc/php/7.1/apache2/conf.d/icinga.ini
+RUN echo 'session.hash_function = 1' >> /etc/php/7.1/apache2/conf.d/icinga.ini
+RUN echo 'session.hash_bits_per_character = 5' >> /etc/php/7.1/apache2/conf.d/icinga.ini
+
+# Fix DocumentRoot
+RUN perl -pi -e 's/\/var\/www\/html/\/usr\/share\/icingaweb2\/public/' /etc/apache2/sites-available/000-default.conf
+RUN echo 'ServerName icingaweb' >> /etc/apache2/apache2.conf
+RUN perl -pi -e 's/RewriteBase \/icingaweb2\//RewriteBase \//' /etc/apache2/conf-available/icingaweb2.conf
+
+# Configure apache
+RUN a2enmod rewrite
+RUN chown -R www-data:www-data /var/www
+ENV APACHE_RUN_USER  www-data
+ENV APACHE_RUN_GROUP www-data
+ENV APACHE_LOG_DIR   /var/log/apache2
+ENV APACHE_RUN_DIR   /var/www
+ENV APACHE_PID_FILE  /var/run/apache2/apache2.pid
+
+# Prepare directory
+RUN chmod -v g+s /etc/icingaweb2
+RUN mkdir -p /etc/icingaweb2/modules/monitoring
+
+# Adding Apache user to the group icingaweb2
+RUN usermod -a -G icingaweb2 -s /bin/bash www-data
+
+# Enabling monitoring module
+RUN icingacli module enable monitoring
+
+EXPOSE 80
+
+# Copy files
+ADD ./conf /etc/icingaweb2
+ADD ./startup.sh /opt/startup.sh
+ADD ./reload.sh /opt/reload.sh
+
+# Fix /etc/icingaweb2 permissions:
+RUN chown -R www-data:icingaweb2 /etc/icingaweb2
+
+CMD ["/bin/sh", "/opt/startup.sh"]

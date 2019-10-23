@@ -1,0 +1,42 @@
+# logrotate configuration file
+nocompress
+
+# use date as a suffix of the rotated file
+dateext
+
+/var/log/apache2/access.log /var/log/apache2/error.log {
+  rotate 0
+  sharedscripts
+  missingok
+  dateformat -%Y-%m-%d.%s
+  postrotate
+    D1=`date +"%Y-%m-%d"`
+    DATE=`ls /var/log/apache2 | grep -oe "$D1.*$" | tail -1`
+
+    # Notify Apache to reload logs
+    /bin/bash /opt/deploy/apache-reload.sh
+
+    # Execute apache backup
+    /bin/bash /opt/deploy/apache-backup.sh ${DATE} $1
+
+  endscript
+}
+
+/var/log/mysql/general.log /var/log/mysql/slow.log /var/log/mysql/error.log {
+  rotate 0
+  sharedscripts
+  missingok
+  dateformat -%Y-%m-%d.%s
+  postrotate
+    D1=`date +"%Y-%m-%d"`
+    DATE=`ls /var/log/mysql | grep -oe "$D1.*$" | tail -1`
+
+    # Notify MySQL to reload logs
+    /bin/bash /opt/deploy/mysql-reload.sh
+   
+    # Execute mysql backup
+    /bin/bash /opt/deploy/mysql-backup.sh ${DATE} $1
+
+  endscript
+
+}

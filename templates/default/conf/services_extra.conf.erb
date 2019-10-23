@@ -1,0 +1,7 @@
+apply Service "mysql" {
+  import "generic-service"
+
+  check_command = "mysql"
+
+  assign where (host.address || host.address6) && host.vars.mysql == true
+}
